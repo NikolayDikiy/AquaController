@@ -3,20 +3,8 @@
 #include <Wire.h>
 
 //Подключаем и настраиваем библиотеки для экрана
-#include <Adafruit_GFX.h>
-//#include <Adafruit_SSD1306.h>
-#include <OakOLED.h>
-
-//#define OLED_RESET 4
-//Adafruit_SSD1306 display(OLED_RESET);
-OakOLED display;
-
-/*
-//Проверка настроек в библиотеке для нашего экрана
-#if (SSD1306_LCDHEIGHT != 64)
-#error("Height incorrect, please fix Adafruit_SSD1306.h!");
-#endif
-*/
+#include "ASOLED.h"
+#include "icons.c"
 
 //Подключаем и настраиваем библиотеки для часов
 #if defined(ESP8266)
@@ -36,20 +24,13 @@ void setup()   {
   //Serial.print(" ");
   //Serial.println(__TIME__);
 
-  //Serial.println("Init screen");
-  // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
-  //display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x64)
-  display.begin();  // initialize with the I2C addr 0x3C (for the 128x64)
-  // init done
-  
-  // Show image buffer on the display hardware.
-  // Since the buffer is intialized with an Adafruit splashscreen
-  // internally, this will display the splashscreen.
-  display.display();
+  Serial.println("Init screen");
+  LD.init();  //initialze OLED display
+  LD.clearDisplay();
   delay(1000);
 
   // Clear the buffer.
-  display.clearDisplay();
+  LD.clearDisplay();
   
   /* Display test lines
   *
@@ -117,12 +98,7 @@ void printTime(const RtcDateTime& dt)
             PSTR("%02u:%02u"),
             dt.Hour(),
             dt.Minute() );
-    display.setTextSize(2);
-    display.setTextColor(WHITE);
-    display.setCursor(67,0);
-    display.fillRect(66,0,127,14, BLACK);
-    display.print(datestring);
-    display.display();
+    LD.printString_12x16(datestring, 60, 0);
 }
 
 void printDate(const RtcDateTime& dt)
@@ -135,49 +111,16 @@ void printDate(const RtcDateTime& dt)
             dt.Month(),
             dt.Day(),
             dt.Year() );
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(0,0);
-    display.fillRect(0,0,66,7, BLACK);
-    display.print(datestring);
-    display.display();
+    LD.printString_6x8(datestring, 0, 0);
 }
 
 void drawLampState(bool state){
-  
-  display.drawRect(10, 50, 10, 10, WHITE);
   if(state){
-    display.fillCircle(15, 40, 10, WHITE);
+    LD.drawBitmap(lamp_on, 10, 5);
+    //LD.drawBitmap(pill, 10, 5);
   }
   else{
-    display.fillCircle(15, 40, 10, BLACK);
-    display.drawCircle(15, 40, 10, WHITE);
+    //LD.drawBitmap(lamp_off, 10, 5);
+    LD.drawBitmap(pill, 10, 5);
   }
-  display.display();
 }
-
-// For some Tests
-void testdrawliner(){
-  for (int16_t i=0; i<display.width(); i+=2) {
-    display.drawPixel(i, 0, WHITE);
-    delay(1);
-  }
-  for (int16_t i=0; i<display.width(); i+=2) {
-    display.drawPixel(i, 15, WHITE);
-    delay(1);
-  }
-  for (int16_t i=0; i<display.width(); i+=2) {
-    display.drawPixel(i, 16, WHITE);
-    delay(1);
-  }
-  for (int16_t i=0; i<display.width(); i+=2) {
-    display.drawPixel(i, 63, WHITE);
-    delay(1);
-  }
-  for (int16_t i=0; i<display.width(); i+=5) {
-    display.drawLine(i, 0, i, display.height(), WHITE);
-    delay(1);
-  }
-  display.display();
-}
-
