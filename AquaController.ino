@@ -16,34 +16,30 @@
 #include <RtcDS3231.h>
 RtcDS3231<TwoWire> Rtc(Wire);
 
+
+// Определяем глобальные переменные
+bool lampstate = true; //состояние лампы
+bool airstate = true; //состояние компрессора
+byte alarms[8] = {//массив для хранения будильников лампы и компрессора
+10, 00, //вкл лампы
+22, 00, //выкл лампы
+10, 00, //вкл компрессор
+22, 00 //выкл компрессор
+};
+
 void setup()   {                
   Serial.begin(9600);
   
-  //Serial.print("compiled: ");
-  //Serial.print(__DATE__);
-  //Serial.print(" ");
-  //Serial.println(__TIME__);
+  Serial.print("compiled: ");
+  Serial.print(__DATE__);
+  Serial.print(" ");
+  Serial.println(__TIME__);
 
   Serial.println("Init screen");
   LD.init();  //initialze OLED display
-  LD.clearDisplay();
   delay(1000);
-
-  // Clear the buffer.
   LD.clearDisplay();
   
-  /* Display test lines
-  *
-  * testdrawliner();
-  * delay(10000);
-  * display.clearDisplay();
-  */
-/*
-  // miniature bitmap display
-  display.drawBitmap(30, 16,  logo16_glcd_bmp, 16, 16, 1);
-  display.display();
-  delay(10000);
-*/
   //--------RTC SETUP ------------
   Rtc.Begin();
   RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
@@ -69,8 +65,6 @@ void setup()   {
     Rtc.SetSquareWavePin(DS3231SquareWavePin_ModeNone);
 }
 
-bool lampstate = true;
-
 void loop() {
   if (!Rtc.IsDateTimeValid()) 
     {
@@ -84,13 +78,14 @@ void loop() {
     printDate(now);
     drawLampState(lampstate);
     lampstate = !lampstate;
+    drawAirState(airstate);
+    airstate = !airstate;
   delay(1000);
 }
 
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 
-void printTime(const RtcDateTime& dt)
-{
+void printTime(const RtcDateTime& dt){ //Выводим текущее время
     char datestring[6];
 
     snprintf_P(datestring, 
@@ -98,11 +93,10 @@ void printTime(const RtcDateTime& dt)
             PSTR("%02u:%02u"),
             dt.Hour(),
             dt.Minute() );
-    LD.printString_12x16(datestring, 60, 0);
+    LD.printString_12x16(datestring, 62, 0);
 }
 
-void printDate(const RtcDateTime& dt)
-{
+void printDate(const RtcDateTime& dt){ //Выводим текущую дату
     char datestring[11];
 
     snprintf_P(datestring, 
@@ -114,13 +108,52 @@ void printDate(const RtcDateTime& dt)
     LD.printString_6x8(datestring, 0, 0);
 }
 
-void drawLampState(bool state){
+void drawLampState(bool state){//Выводим состояние лампы
+  char timestring[6];
+  
   if(state){
-    LD.drawBitmap(lamp_on, 10, 5);
-    //LD.drawBitmap(pill, 10, 5);
+    LD.drawBitmap(lamp_on, 0, 2);
   }
   else{
-    //LD.drawBitmap(lamp_off, 10, 5);
-    LD.drawBitmap(pill, 10, 5);
+    LD.drawBitmap(lamp_off, 0, 2);
   }
+  LD.printString_6x8("ON Time: ", 18, 2);
+  snprintf_P(timestring, 
+            countof(timestring),
+            PSTR("%02u:%02u"),
+            alarms[0],
+            alarms[1] );
+  LD.printString_6x8(timestring, 73, 2);
+  LD.printString_6x8("OFF Time: ", 18, 3);
+  snprintf_P(timestring, 
+            countof(timestring),
+            PSTR("%02u:%02u"),
+            alarms[2],
+            alarms[3] );
+  LD.printString_6x8(timestring, 73, 3);
+}
+
+void drawAirState(bool state){
+  char timestring[6];
+  
+  if(state){
+    LD.drawBitmap(air_on, 0, 5);
+  }
+  else{
+    LD.drawBitmap(air_off, 0, 5);
+  }
+  LD.printString_6x8("ON Time: ", 18, 5);
+  snprintf_P(timestring, 
+            countof(timestring),
+            PSTR("%02u:%02u"),
+            alarms[4],
+            alarms[5] );
+  LD.printString_6x8(timestring, 73, 5);
+  LD.printString_6x8("OFF Time: ", 18, 6);
+  snprintf_P(timestring, 
+            countof(timestring),
+            PSTR("%02u:%02u"),
+            alarms[6],
+            alarms[7] );
+  LD.printString_6x8(timestring, 73, 6);
 }
